@@ -36,7 +36,6 @@ static int read_repeat(int fd, char *buf, size_t size) {
 
 int send(void *self_, local_id dst_, Message const *msg) {
   struct Self *self = self_;
-  self->local_time++;
   int fd = self->pipes[2 * (self->id * self->n_processes + dst_) + 1];
   CHK_RETCODE(write_repeat(
       fd, (char *)msg, sizeof(MessageHeader) + msg->s_header.s_payload_len));
@@ -49,6 +48,7 @@ int send_multicast(void *self_, Message const *msg) {
     if (i != self->id)
       send(self, (local_id)i, msg);
   }
+  self->local_time = msg->s_header.s_local_time + 1;
   return 1;
 }
 
@@ -64,7 +64,6 @@ int receive(void *self_, local_id from, Message *msg) {
   }
   if (self->local_time < msg->s_header.s_local_time)
     self->local_time = msg->s_header.s_local_time;
-  self->local_time++;
   return 1;
 }
 

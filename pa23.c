@@ -54,7 +54,7 @@ void transfer(void *parent_data, local_id src, local_id dst, balance_t amount) {
   struct Self *self = parent_data;
   Message msg;
   msg.s_header.s_magic = MESSAGE_MAGIC;
-  msg.s_header.s_local_time = get_lamport_time();
+  msg.s_header.s_local_time = ++self->local_time;
   msg.s_header.s_type = TRANSFER;
   msg.s_header.s_payload_len = sizeof(TransferOrder);
   TransferOrder *order = (TransferOrder *)msg.s_payload;
@@ -72,12 +72,12 @@ static int run_child(struct Self *self) {
 
   history.s_id = self->id;
   history.s_history[0].s_balance = self->my_balance;
-  history.s_history[0].s_time = get_lamport_time();
+  history.s_history[0].s_time = ++self->local_time;
   history.s_history[0].s_balance_pending_in = 0;
   history.s_history_len = 1;
 
   msg.s_header.s_magic = MESSAGE_MAGIC;
-  msg.s_header.s_local_time = get_lamport_time();
+  msg.s_header.s_local_time = ++self->local_time;
   msg.s_header.s_type = STARTED;
   msg.s_header.s_payload_len = snprintf(
       msg.s_payload, MAX_PAYLOAD_LEN, log_started_fmt, (int)self->local_time,
@@ -112,7 +112,7 @@ static int run_child(struct Self *self) {
     if (msg.s_header.s_type == TRANSFER) {
       TransferOrder *order = (TransferOrder *)msg.s_payload;
       if (order->s_src == self->id) {
-        msg.s_header.s_local_time = get_lamport_time();
+        msg.s_header.s_local_time = ++self->local_time;
         send(self, order->s_dst, &msg);
         self->my_balance -= order->s_amount;
       }
@@ -128,7 +128,7 @@ static int run_child(struct Self *self) {
         msg.s_header.s_magic = MESSAGE_MAGIC;
         msg.s_header.s_payload_len = 0;
         msg.s_header.s_type = ACK;
-        msg.s_header.s_local_time = get_lamport_time();
+        msg.s_header.s_local_time = ++self->local_time;
         send(self, 0, &msg);
         self->my_balance += order->s_amount;
       }
@@ -144,7 +144,7 @@ static int run_child(struct Self *self) {
   }
 
   msg.s_header.s_magic = MESSAGE_MAGIC;
-  msg.s_header.s_local_time = get_lamport_time();
+  msg.s_header.s_local_time = ++self->local_time;
   msg.s_header.s_type = DONE;
   msg.s_header.s_payload_len =
       snprintf(msg.s_payload, MAX_PAYLOAD_LEN, log_done_fmt,
@@ -162,7 +162,7 @@ static int run_child(struct Self *self) {
           (int)self->id);
 
   msg.s_header.s_magic = MESSAGE_MAGIC;
-  msg.s_header.s_local_time = get_lamport_time();
+  msg.s_header.s_local_time = ++self->local_time;
   msg.s_header.s_type = BALANCE_HISTORY;
   msg.s_header.s_payload_len =
       (char *)&history.s_history[history.s_history_len] - (char *)&history;
@@ -186,7 +186,7 @@ static int run_parent(struct Self *self) {
   bank_robbery(self, self->n_processes - 1);
 
   msg.s_header.s_magic = MESSAGE_MAGIC;
-  msg.s_header.s_local_time = get_lamport_time();
+  msg.s_header.s_local_time = ++self->local_time;
   msg.s_header.s_type = STOP;
   msg.s_header.s_payload_len = 0;
   CHK_RETCODE(send_multicast(self, &msg));
@@ -252,8 +252,6 @@ int main(int argc, char *argv[]) {
     }
   }
   fflush(self.pipes_log);
-
-  self.local_time = 0;
 
   for (size_t id = 1; id < self.n_processes; ++id) {
     sscanf(argv[2 + id], "%" SCNd16, &self.my_balance);
