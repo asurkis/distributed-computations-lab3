@@ -64,6 +64,8 @@ int receive(void *self_, local_id from, Message *msg) {
   }
   if (self->local_time < msg->s_header.s_local_time)
     self->local_time = msg->s_header.s_local_time;
+  else
+    ++self->local_time;
   return 1;
 }
 

@@ -121,8 +121,6 @@ static int run_child(struct Self *self) {
         for (size_t i = 0; i < history.s_history_len; ++i) {
           BalanceState *state = &history.s_history[i];
           timestamp_t ts = state->s_time;
-          printf("%zu: message time = %d; state time = %d; local time = %d\n",
-                 self->id, msg.s_header.s_local_time, ts, self->local_time);
           if (msg.s_header.s_local_time - 2 < ts && ts < self->local_time) {
             state->s_balance_pending_in += order->s_amount;
           }
