@@ -105,7 +105,7 @@ static int run_child(struct Self *self) {
       history.s_history[history.s_history_len].s_balance = self->my_balance;
       history.s_history[history.s_history_len].s_time = t;
       history.s_history[history.s_history_len].s_balance_pending_in = 0;
-      ++history.s_history_len;
+      history.s_history_len++;
     }
     if (msg.s_header.s_type == STOP)
       break;
@@ -140,7 +140,7 @@ static int run_child(struct Self *self) {
     history.s_history[history.s_history_len].s_balance = self->my_balance;
     history.s_history[history.s_history_len].s_time = t;
     history.s_history[history.s_history_len].s_balance_pending_in = 0;
-    ++history.s_history_len;
+    history.s_history_len++;
   }
 
   msg.s_header.s_magic = MESSAGE_MAGIC;
